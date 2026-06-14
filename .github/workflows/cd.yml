@@ -38,6 +38,10 @@ jobs:
 
       - name: Copy nginx config
         run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+            "mkdir -p /opt/educrm && chmod 755 /opt/educrm"
+          
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             nginx/nginx.conf \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/opt/educrm/"
