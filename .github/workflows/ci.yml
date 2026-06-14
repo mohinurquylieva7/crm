@@ -1,0 +1,134 @@
+name: CI — Test & Lint
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Backend tests ──────────────────────────────────────────────
+  backend-test:
+    name: Backend — Test & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: Backend
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: educrm_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 3s
+          --health-retries 3
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: Backend/requirements.txt
+
+      - run: pip install -r requirements.txt
+
+      - name: Lint — ruff check
+        run: ruff check app/ tests/
+
+      - name: Lint — ruff format check
+        run: ruff format --check app/ tests/
+
+      - name: Alembic migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/educrm_test
+        run: alembic upgrade head
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/educrm_test
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: test-secret-key-32-characters-minimum
+          ALGORITHM: HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES: "15"
+          REFRESH_TOKEN_EXPIRE_DAYS: "7"
+          APP_ENV: test
+          DEBUG: "false"
+          WORKERS: "1"
+          ALLOWED_ORIGINS: '["http://localhost:5173"]'
+          MEDIA_ROOT: /tmp/media
+          MAX_UPLOAD_SIZE_MB: "5"
+          USE_SPACES: "false"
+        run: |
+          mkdir -p /tmp/media
+          pytest tests/ -v --tb=short \
+            --cov=app --cov-report=term-missing \
+            --cov-fail-under=70
+
+  # ── Frontend build check ───────────────────────────────────────
+  frontend-build:
+    name: Frontend — Build check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Frontend
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - run: npm install --legacy-peer-deps
+      - run: npm run build
+
+  # ── Docker build check ─────────────────────────────────────────
+  docker-build-check:
+    name: Docker build check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend
+        uses: docker/build-push-action@v6
+        with:
+          context: Backend
+          file: Backend/Dockerfile
+          push: false
+          tags: educrm-api:pr-check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: Frontend
+          file: Frontend/Dockerfile
+          push: false
+          tags: educrm-frontend:pr-check
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

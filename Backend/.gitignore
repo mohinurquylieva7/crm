@@ -1,0 +1,30 @@
+.env
+.env.prod
+__pycache__/
+*.pyc
+.pytest_cache/
+media/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.venv/
+venv/
+
+# Deploy secrets (auto-generated, never commit)
+.deploy_secrets
+terraform/.terraform.lock.hcl
+terraform/tfplan
+
+# k6 raw results (heavy JSON — local only)
+k6/results_before.json
+k6/results_after.json
+k6/summary_before.json
+k6/summary_after.json
+k6/summary_load.json
+k6/summary_stress.json
