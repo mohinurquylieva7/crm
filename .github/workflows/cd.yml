@@ -40,7 +40,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
-            "mkdir -p /opt/educrm && chmod 755 /opt/educrm"
+            "sudo mkdir -p /opt/educrm && sudo chmod 755 /opt/educrm && sudo chown ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /opt/educrm"
           
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             nginx/nginx.conf \
@@ -74,8 +74,8 @@ jobs:
 
             echo "=== [1b] SSL sertifikat (crm-ux.duckdns.org) ==="
             if [ ! -d "/etc/letsencrypt/live/crm-ux.duckdns.org" ]; then
-              docker stop educrm_nginx 2>/dev/null || true
-              certbot certonly --standalone --non-interactive --agree-tos \
+              sudo docker stop educrm_nginx 2>/dev/null || true
+              sudo certbot certonly --standalone --non-interactive --agree-tos \
                 --email sahmadjonov782@gmail.com -d crm-ux.duckdns.org
               echo "SSL olindi"
             else
@@ -89,15 +89,15 @@ jobs:
             echo "=== [2/5] Docker build ==="
             DB_PASSWORD=$(grep DB_PASSWORD "$APP_DIR/.env" | cut -d= -f2)
             export DB_PASSWORD
-            docker compose -f docker-compose.prod.yml build --parallel
+            sudo docker compose -f docker-compose.prod.yml build --parallel
 
             echo "=== [3/5] Konteynerlar ishga tushirish ==="
-            docker compose -f docker-compose.prod.yml down 2>/dev/null || true
-            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            sudo docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+            sudo docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
             echo "=== [4/5] Migrations ==="
             sleep 8
-            docker exec educrm_api alembic upgrade head
+            sudo docker exec educrm_api alembic upgrade head
 
             echo "=== [5/5] Health check ==="
             sleep 5
@@ -110,7 +110,7 @@ jobs:
               sleep 8
             done
 
-            docker image prune -f --filter "until=24h" 2>/dev/null || true
+            sudo docker image prune -f --filter "until=24h" 2>/dev/null || true
             echo "Deploy muvaffaqiyatli: $(date)"
           ENDSSH
 
