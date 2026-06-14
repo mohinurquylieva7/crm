@@ -80,8 +80,12 @@ jobs:
             grep ALLOWED_ORIGINS /opt/educrm/.env || true
 
             echo "=== [2/5] Docker build ==="
+            echo "Checking .env file..."
+            ls -la "$APP_DIR/.env" || echo "⚠️  .env file not found in $APP_DIR"
+            cat "$APP_DIR/.env" | grep DB_PASSWORD || echo "⚠️  DB_PASSWORD not found in .env"
             DB_PASSWORD=$(grep DB_PASSWORD "$APP_DIR/.env" | cut -d= -f2)
             export DB_PASSWORD
+            echo "DB_PASSWORD set to: ${DB_PASSWORD:0:5}***" # Show first 5 chars for safety
             sudo docker compose -f docker-compose.prod.yml build --parallel
 
             echo "=== [3/5] Konteynerlar ishga tushirish ==="
