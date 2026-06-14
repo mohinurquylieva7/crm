@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 30
     environment:
       name: production
-      url: https://crm-ux.duckdns.org
+      url: https://crm-uz.duckdns.org
 
     steps:
       - uses: actions/checkout@v4
@@ -72,18 +72,11 @@ jobs:
             fi
             cd "$REPO_DIR"
 
-            echo "=== [1b] SSL sertifikat (crm-ux.duckdns.org) ==="
-            if [ ! -d "/etc/letsencrypt/live/crm-ux.duckdns.org" ]; then
-              sudo docker stop educrm_nginx 2>/dev/null || true
-              sudo certbot certonly --standalone --non-interactive --agree-tos \
-                --email sahmadjonov782@gmail.com -d crm-ux.duckdns.org
-              echo "SSL olindi"
-            else
-              echo "SSL allaqachon mavjud"
-            fi
+            echo "=== [1b] Certbot sertifikat (xalos) ==="
+            echo "Sertifikat olishi shart emas - skip"
 
             echo "=== [1c] .env ALLOWED_ORIGINS yangilash ==="
-            sed -i 's|ALLOWED_ORIGINS=\["https://edu\.crm\.ozodbekme\.dev"\]|ALLOWED_ORIGINS=["https://crm-ux.duckdns.org"]|' /opt/educrm/.env 2>/dev/null || true
+            sed -i 's|ALLOWED_ORIGINS=\["https://edu\.crm\.ozodbekme\.dev"\]|ALLOWED_ORIGINS=["https://crm-uz.duckdns.org"]|' /opt/educrm/.env 2>/dev/null || true
             grep ALLOWED_ORIGINS /opt/educrm/.env || true
 
             echo "=== [2/5] Docker build ==="
@@ -121,8 +114,8 @@ jobs:
           echo "| | |" >> $GITHUB_STEP_SUMMARY
           echo "|---|---|" >> $GITHUB_STEP_SUMMARY
           echo "| Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| URL | https://crm-ux.duckdns.org |" >> $GITHUB_STEP_SUMMARY
-          echo "| API Docs | https://crm-ux.duckdns.org/docs |" >> $GITHUB_STEP_SUMMARY
+          echo "| URL | https://crm-uz.duckdns.org |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Docs | https://crm-uz.duckdns.org/docs |" >> $GITHUB_STEP_SUMMARY
 
   notify-failure:
     name: Notify on failure
