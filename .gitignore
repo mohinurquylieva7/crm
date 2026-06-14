@@ -1,58 +1,11 @@
-# Dependencies
-node_modules/
-Frontend/node_modules/
-
-# Build outputs
-Frontend/dist/
-Frontend/.vite/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-Backend/.env
-Backend/.env.prod
-
-# Python
+# Python-generated files
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-venv/
-env/
-.venv/
-*.egg-info/
-dist/
+*.py[oc]
 build/
+dist/
+wheels/
+*.egg-info
 
-# Pytest
-.pytest_cache/
-htmlcov/
-.coverage
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-
-# IDE
-.vscode/
-.idea/
-*.iml
-
-# Terraform state (sensitive!)
-*.tfstate
-*.tfstate.backup
-.terraform/
-*.tfvars
-
-# Docker volumes
-postgres_data/
+# Virtual environments
+.venv
+crm.db

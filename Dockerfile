@@ -1,20 +1,17 @@
-# Stage 1: Build
-FROM node:20-alpine AS builder
+FROM python:3.11-slim
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install --force
+COPY requirements.txt ./
+RUN uv pip install --system --no-cache -r requirements.txt
 
-COPY . .
-RUN npm run build
+COPY app/ ./app/
+COPY index.html ./
 
-# Stage 2: Serve
-FROM nginx:1.27-alpine AS runner
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
+RUN mkdir -p /app/data
 
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget -qO- http://localhost:80/ || exit 1
+EXPOSE 8010
 
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]
