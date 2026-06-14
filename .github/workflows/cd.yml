@@ -75,17 +75,11 @@ jobs:
             echo "=== [1b] Certbot sertifikat (xalos) ==="
             echo "Sertifikat olishi shart emas - skip"
 
-            echo "=== [1c] .env ALLOWED_ORIGINS yangilash ==="
-            sed -i 's|ALLOWED_ORIGINS=\["https://edu\.crm\.ozodbekme\.dev"\]|ALLOWED_ORIGINS=["https://crm-uz.duckdns.org"]|' /opt/educrm/.env 2>/dev/null || true
-            grep ALLOWED_ORIGINS /opt/educrm/.env || true
+            echo "=== [1c] Deploy (skip .env) ==="
+            echo "Deployment boshlanmoqda..."
 
             echo "=== [2/5] Docker build ==="
-            echo "Checking .env file..."
-            ls -la "$APP_DIR/.env" || echo "⚠️  .env file not found in $APP_DIR"
-            cat "$APP_DIR/.env" | grep DB_PASSWORD || echo "⚠️  DB_PASSWORD not found in .env"
-            DB_PASSWORD=$(grep DB_PASSWORD "$APP_DIR/.env" | cut -d= -f2)
-            export DB_PASSWORD
-            echo "DB_PASSWORD set to: ${DB_PASSWORD:0:5}***" # Show first 5 chars for safety
+
             sudo docker compose -f docker-compose.prod.yml build --parallel
 
             echo "=== [3/5] Konteynerlar ishga tushirish ==="
