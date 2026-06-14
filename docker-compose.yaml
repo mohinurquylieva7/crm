@@ -29,6 +29,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
       - nginx-cache:/var/cache/nginx
+      - nginx-confd:/etc/nginx/conf.d
     depends_on:
       - crm
     restart: unless-stopped
@@ -54,6 +55,7 @@ services:
 volumes:
   crm-data:
   nginx-cache:
+  nginx-confd:
 
 networks:
   crm-network:

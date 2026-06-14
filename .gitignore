@@ -8,4 +8,14 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Environment & secrets
+.env
+
+# Database files
 crm.db
+test.db
+*.db
+
+# SSL certificates (generated on server)
+certbot/
