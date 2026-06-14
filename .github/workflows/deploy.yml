@@ -82,7 +82,7 @@ jobs:
             # Create required directories
             mkdir -p certbot/{conf,www}
 
-            # Create .env from secrets (envs are passed via appleboy/ssh-action)
+            # Create .env from secrets
             cat > .env << EOF
             SECRET_KEY=${SECRET_KEY}
             DOMAIN=${DOMAIN}
@@ -91,12 +91,18 @@ jobs:
             LOG_LEVEL=INFO
             DEBUG=false
             EOF
-            # Remove leading whitespace from heredoc
             sed -i 's/^[[:space:]]*//' .env
             chmod 600 .env
 
+            # Use docker-compose (V1) or docker compose (V2)
+            if command -v docker-compose &> /dev/null; then
+              DC="docker-compose"
+            else
+              DC="docker compose"
+            fi
+
             # Build and deploy WITHOUT destroying volumes (preserves data!)
-            docker compose up -d --build --force-recreate
+            $DC up -d --build --force-recreate
 
             # Wait for CRM container to be ready
             echo "=== Waiting for CRM to start... ==="
@@ -105,13 +111,13 @@ jobs:
             # Health check — verify the app is responding
             echo "=== Running health check ==="
             for i in 1 2 3 4 5; do
-              if docker compose exec -T crm python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')" 2>/dev/null; then
+              if $DC exec -T crm python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')" 2>/dev/null; then
                 echo "=== ✅ Health check passed ==="
                 break
               fi
               if [ "$i" -eq 5 ]; then
                 echo "=== ❌ Health check failed after 5 attempts ==="
-                docker compose logs --tail=30
+                $DC logs --tail=30
                 exit 1
               fi
               echo "Attempt $i failed, retrying in 5s..."
@@ -122,7 +128,7 @@ jobs:
             if [ -f "certbot/conf/live/crm-uz.duckdns.org/fullchain.pem" ]; then
               echo "=== SSL certs found, enabling HTTPS ==="
               docker cp nginx-ssl.conf nginx:/etc/nginx/conf.d/ssl.conf
-              docker compose exec -T nginx nginx -s reload
+              $DC exec -T nginx nginx -s reload
               echo "=== HTTPS enabled ==="
             else
               echo "=== No SSL certs yet, running HTTP only ==="
@@ -132,7 +138,7 @@ jobs:
             # Show status
             echo ""
             echo "=== Container Status ==="
-            docker compose ps
+            $DC ps
             echo ""
             echo "=== Recent Logs ==="
-            docker compose logs --tail=10
+            $DC logs --tail=10
