@@ -24,6 +24,14 @@ jobs:
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "ERROR: SSH_PRIVATE_KEY secret not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SSH_HOST }}" ]; then
+            echo "ERROR: SSH_HOST secret not set!"
+            exit 1
+          fi
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
@@ -40,7 +48,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
         run: |
           GIT_TOKEN="${{ secrets.GHCR_TOKEN }}"
-          CLONE_URL="https://mohinurquylieva2:${GIT_TOKEN}@github.com/mohinurquylieva2/Edu_CRM.git"
+          CLONE_URL="https://mohinurquylieva7:${GIT_TOKEN}@github.com/mohinurquylieva7/crm.git"
 
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             "${SSH_USER}@${SSH_HOST}" bash -s -- "$CLONE_URL" << 'ENDSSH'
