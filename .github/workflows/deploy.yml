@@ -101,7 +101,7 @@ jobs:
               DC="docker compose"
             fi
 
-            # Build and deploy WITHOUT destroying volumes (preserves data!)
+            # Build and deploy HTTP-only Nginx first (WITHOUT destroying volumes)
             $DC up -d --build --force-recreate
 
             # Wait for CRM container to be ready
@@ -124,15 +124,38 @@ jobs:
               sleep 5
             done
 
-            # Conditionally enable SSL if certs exist
-            if [ -f "certbot/conf/live/crm-uz.duckdns.org/fullchain.pem" ]; then
-              echo "=== SSL certs found, enabling HTTPS ==="
+            # Auto-request SSL certificate if not exists
+            if [ ! -f "certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
+              echo "=== 🔐 SSL certificate not found. Requesting from Let's Encrypt... ==="
+              # Run Certbot container to request certificate
+              docker compose run --rm certbot certonly \
+                --webroot \
+                -w /var/www/certbot \
+                --email "${ADMIN_EMAIL}" \
+                --agree-tos \
+                --no-eff-email \
+                -d "${DOMAIN}" \
+                -d "www.${DOMAIN}" || \
+              $DC run --rm certbot certonly \
+                --webroot \
+                -w /var/www/certbot \
+                --email "${ADMIN_EMAIL}" \
+                --agree-tos \
+                --no-eff-email \
+                -d "${DOMAIN}" \
+                -d "www.${DOMAIN}"
+            fi
+
+            # Conditionally enable SSL config inside Nginx container
+            if [ -f "certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
+              echo "=== ✅ SSL certs found, enabling HTTPS in Nginx ==="
+              # Adjust domain name in ssl config dynamic substitution
+              sed -i "s/crm-uz.duckdns.org/${DOMAIN}/g" nginx-ssl.conf
               docker cp nginx-ssl.conf nginx:/etc/nginx/conf.d/ssl.conf
               $DC exec -T nginx nginx -s reload
-              echo "=== HTTPS enabled ==="
+              echo "=== 🚀 HTTPS is active ==="
             else
-              echo "=== No SSL certs yet, running HTTP only ==="
-              echo "=== Run setup-ssl.sh on the server to obtain certs ==="
+              echo "=== ⚠️ SSL configuration skipped: certs still missing ==="
             fi
 
             # Show status
