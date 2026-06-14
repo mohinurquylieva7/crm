@@ -30,6 +30,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/${{ secrets.SSH_USER }}/crm-api
-            docker compose down
-            docker compose up -d --build
-            docker compose ps
+            docker-compose down
+            docker-compose up -d --build
+            docker-compose ps
