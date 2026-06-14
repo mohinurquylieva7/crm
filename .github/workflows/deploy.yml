@@ -127,8 +127,8 @@ jobs:
             # Auto-request SSL certificate if not exists
             if [ ! -f "certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
               echo "=== 🔐 SSL certificate not found. Requesting from Let's Encrypt... ==="
-              # Run Certbot container to request certificate non-interactively
-              $DC run -d certbot certonly \
+              # Run Certbot container to request certificate in foreground
+              $DC run --rm certbot certonly \
                 --webroot \
                 -w /var/www/certbot \
                 --email "${ADMIN_EMAIL}" \
@@ -136,21 +136,6 @@ jobs:
                 --non-interactive \
                 -d "${DOMAIN}" \
                 -d "www.${DOMAIN}"
-              
-              # Wait for certbot container to complete its job
-              echo "=== Waiting for Certbot to finish... ==="
-              for j in 1 2 3 4 5 6; do
-                if [ ! "$(docker ps -a -q -f name=certbot-run)" ]; then
-                  # If name matches run container
-                  break
-                fi
-                echo "Certbot is still running, waiting... ($((j*10))s)"
-                sleep 10
-              done
-              
-              # Print certbot run logs to verify success or diagnose failure
-              echo "=== Certbot Container Logs ==="
-              docker logs $($DC ps -a -q certbot) --tail=50 2>/dev/null || docker-compose logs certbot --tail=50 2>/dev/null || true
             fi
 
             # Conditionally enable SSL config inside Nginx container
