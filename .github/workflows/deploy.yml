@@ -139,7 +139,18 @@ jobs:
               
               # Wait for certbot container to complete its job
               echo "=== Waiting for Certbot to finish... ==="
-              sleep 15
+              for j in 1 2 3 4 5 6; do
+                if [ ! "$(docker ps -a -q -f name=certbot-run)" ]; then
+                  # If name matches run container
+                  break
+                fi
+                echo "Certbot is still running, waiting... ($((j*10))s)"
+                sleep 10
+              done
+              
+              # Print certbot run logs to verify success or diagnose failure
+              echo "=== Certbot Container Logs ==="
+              docker logs $($DC ps -a -q certbot) --tail=50 2>/dev/null || docker-compose logs certbot --tail=50 2>/dev/null || true
             fi
 
             # Conditionally enable SSL config inside Nginx container
